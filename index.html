@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¡Es mi cumple! · Marian</title>
+
+<!-- ============ META OPEN GRAPH (preview de WhatsApp) ============ -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="¡Es mi cumple! 🎉 Estás invitad@">
+<meta property="og:description" content="Ábrela y confirma tu asistencia ✨🎁">
+<!-- Al desplegar, activa estas dos con tu dominio real (URL absoluta):
+<meta property="og:url" content="https://TU-DOMINIO.vercel.app/">
+<meta property="og:image" content="https://TU-DOMINIO.vercel.app/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+-->
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ================================================================
+   Paleta NEÓN (única). El verde/cyan vive en el "boot" y la fiesta
+   se enciende en magenta/violeta.
+   ================================================================ */
+:root {
+  --void:#0d0a18; --panel:#161228; --line:#2a2350;
+  --ink:#f0edff;  --muted:#8b84b0;
+  --boot:#22d3ee;                    /* cyan terminal (fase código) */
+  --flare:#ff2d95; --flare2:#b026ff; /* magenta/violeta (fase fiesta) */
+  --gold:#22d3ee;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--void);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Fondo ambiental: glows suaves + rejilla tenue */
+body::before {
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(600px 400px at 15% -10%, color-mix(in srgb, var(--flare) 18%, transparent), transparent 70%),
+    radial-gradient(700px 500px at 110% 110%, color-mix(in srgb, var(--flare2) 14%, transparent), transparent 70%);
+}
+body::after {
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.35;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(circle at 50% 40%, #000 0%, transparent 75%);
+}
+
+/* ======================= FASE 0 · PANTALLA DE ENTRADA ======================= */
+#enter {
+  position:fixed; inset:0; z-index:100;
+  background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--flare) 13%, var(--void)), var(--void) 70%);
+  display:grid; place-items:center; text-align:center; padding:24px;
+}
+#enter.hide { opacity:0; pointer-events:none; transition:opacity .6s ease; }
+#enter .box { max-width:340px; animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both; }
+#enter .kicker { font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--boot); margin-bottom:16px; }
+#enter h2 { font-family:'Unbounded'; font-weight:800; line-height:.98;
+  font-size:clamp(32px, 11vw, 46px); letter-spacing:-1px;
+  background:linear-gradient(135deg, var(--flare), var(--gold)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+#enter p { color:var(--muted); font-size:14px; line-height:1.6; margin:16px 0 28px; }
+#enterBtn { font-family:'Unbounded'; font-weight:700; font-size:18px; color:#0d0a18;
+  background:linear-gradient(135deg, var(--flare), var(--gold)); border:none; border-radius:99px;
+  padding:16px 42px; cursor:pointer; transition:.18s;
+  box-shadow:0 12px 34px color-mix(in srgb, var(--flare) 40%, transparent); }
+#enterBtn:hover { filter:brightness(1.08); transform:translateY(-2px); }
+#enterBtn:active { transform:scale(.97); }
+#enter .sound { margin-top:18px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+
+/* botón mute (aparece al entrar) */
+#mute {
+  position:fixed; top:18px; left:18px; z-index:60;
+  width:42px; height:42px; border-radius:50%; display:none; place-items:center;
+  background:color-mix(in srgb, var(--panel) 90%, transparent);
+  border:1px solid var(--line); color:var(--ink); cursor:pointer;
+  font-size:16px; backdrop-filter:blur(6px); transition:.2s;
+}
+#mute:hover { border-color:var(--flare); }
+
+/* ======================= FASE 1 · BOOT (terminal) ======================= */
+#boot {
+  position:fixed; inset:0; z-index:50;
+  background:var(--void);
+  display:flex; flex-direction:column; justify-content:center;
+  padding:28px; gap:14px;
+  font-family:'JetBrains Mono',monospace;
+}
+#boot .scan {
+  position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background:linear-gradient(transparent 50%, rgba(255,255,255,.02) 50%);
+  background-size:100% 4px;
+}
+#bootlog { max-width:640px; margin:0 auto; width:100%; font-size:14px; line-height:1.9; }
+#bootlog .line { color:var(--boot); white-space:pre-wrap; }
+#bootlog .line .muted { color:var(--muted); }
+.cursor { display:inline-block; width:9px; height:16px; background:var(--boot);
+  vertical-align:-2px; margin-left:2px; animation:blink 1s steps(1) infinite; }
+@keyframes blink { 50%{ opacity:0; } }
+
+#progressWrap { max-width:640px; margin:8px auto 0; width:100%; }
+#progressBar { height:6px; border-radius:99px; background:var(--line); overflow:hidden; }
+#progressBar i { display:block; height:100%; width:0;
+  background:linear-gradient(90deg, var(--boot), var(--gold));
+  transition:width .25s ease; }
+#progressPct { font-size:12px; color:var(--muted); margin-top:6px; }
+
+#skip {
+  position:fixed; top:18px; right:18px; z-index:60;
+  font-family:'JetBrains Mono',monospace; font-size:12px;
+  color:var(--muted); background:transparent;
+  border:1px solid var(--line); border-radius:99px;
+  padding:7px 14px; cursor:pointer; transition:.2s;
+}
+#skip:hover { color:var(--ink); border-color:var(--boot); }
+
+/* ======================= FASE 2 · INVITACIÓN ======================= */
+#invite {
+  position:relative; z-index:1;
+  max-width:460px; margin:0 auto;
+  padding:48px 22px 40px;
+  display:none;
+  text-align:center;
+}
+#invite.show { display:block; animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes riseIn { from{ opacity:0; transform:translateY(24px);} to{ opacity:1; transform:none;} }
+
+/* Foto */
+.photo {
+  width:132px; height:132px; margin:0 auto 22px;
+  border-radius:50%; position:relative;
+  background:var(--panel);
+  display:grid; place-items:center;
+  box-shadow:0 0 0 3px var(--void), 0 0 0 5px color-mix(in srgb, var(--flare) 60%, transparent),
+             0 0 40px color-mix(in srgb, var(--flare) 45%, transparent);
+  overflow:hidden;
+}
+.photo img { width:100%; height:100%; object-fit:cover; object-position:center 30%; }
+.photo .ph { font-family:'Unbounded'; font-weight:800; font-size:52px;
+  background:linear-gradient(135deg, var(--flare), var(--gold));
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.photo .ring { position:absolute; inset:-5px; border-radius:50%;
+  background:conic-gradient(from 0deg, var(--flare), var(--gold), var(--flare2), var(--flare));
+  z-index:-1; animation:spin 6s linear infinite; filter:blur(1px); }
+@keyframes spin { to{ transform:rotate(360deg);} }
+
+.eyebrow {
+  font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--boot); margin-bottom:10px;
+}
+h1 {
+  font-family:'Unbounded'; font-weight:800; line-height:.98;
+  font-size:clamp(38px, 12vw, 58px); letter-spacing:-1px;
+  background:linear-gradient(135deg, var(--flare), var(--gold) 70%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.sub { color:var(--ink); font-size:16px; margin-top:12px; opacity:.9; }
+
+/* Frase firma */
+.punch {
+  font-family:'Unbounded'; font-weight:600; font-size:16px; line-height:1.45;
+  margin:22px auto 4px; max-width:360px;
+  color:var(--gold);
+  text-shadow:0 0 24px color-mix(in srgb, var(--flare) 40%, transparent);
+}
+
+/* Countdown */
+.countdown { display:flex; justify-content:center; gap:8px; margin:28px 0 30px; }
+.cd-box {
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  padding:12px 4px; min-width:66px;
+}
+.cd-num { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:28px;
+  color:var(--ink); font-variant-numeric:tabular-nums; }
+.cd-lbl { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted); margin-top:4px; }
+
+/* Card de datos */
+.card {
+  background:color-mix(in srgb, var(--panel) 82%, transparent);
+  border:1px solid var(--line); border-radius:18px;
+  padding:20px 22px; text-align:left;
+  backdrop-filter:blur(6px);
+}
+.row { display:flex; align-items:baseline; gap:10px; padding:9px 0; }
+.row + .row { border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.row .k {
+  font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--boot); min-width:96px;
+}
+.row .v { font-size:15px; color:var(--ink); font-weight:500; }
+
+/* RSVP */
+.rsvp { margin-top:22px; }
+.rsvp .q { font-family:'Unbounded'; font-weight:600; font-size:18px; margin-bottom:14px; }
+input#nombre {
+  width:100%; padding:14px 16px; border-radius:12px;
+  background:var(--void); border:1px solid var(--line); color:var(--ink);
+  font-size:15px; font-family:inherit; margin-bottom:12px; transition:.2s;
+}
+input#nombre:focus { outline:none; border-color:var(--flare);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--flare) 22%, transparent); }
+.btns { display:flex; gap:10px; }
+.btn { flex:1; padding:14px 12px; border-radius:12px; border:none; cursor:pointer;
+  font-family:inherit; font-weight:600; font-size:15px; transition:.18s; }
+.btn:active { transform:scale(.97); }
+.btn-go { color:#0d0a18;
+  background:linear-gradient(135deg, var(--flare), var(--gold));
+  box-shadow:0 8px 22px color-mix(in srgb, var(--flare) 35%, transparent); }
+.btn-go:hover { filter:brightness(1.08); }
+.btn-no { color:var(--muted); background:transparent; border:1px solid var(--line); }
+.btn-no:hover { color:var(--ink); border-color:var(--muted); }
+
+.maps { display:inline-flex; align-items:center; gap:8px; margin-top:20px;
+  font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--boot);
+  text-decoration:none; border-bottom:1px dashed color-mix(in srgb, var(--boot) 50%, transparent);
+  padding-bottom:2px; }
+.maps:hover { color:var(--gold); }
+
+footer { margin-top:34px; font-family:'JetBrains Mono',monospace;
+  font-size:11px; color:var(--muted); line-height:1.8; }
+.hint { opacity:.6; }
+
+/* Toast */
+#toast {
+  position:fixed; left:50%; bottom:90px; transform:translate(-50%,20px);
+  background:var(--panel); border:1px solid var(--flare); color:var(--ink);
+  padding:13px 20px; border-radius:99px; font-size:14px; font-weight:500;
+  z-index:80; opacity:0; pointer-events:none; transition:.35s;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center;
+}
+#toast.show { opacity:1; transform:translate(-50%,0); }
+
+/* Easter egg terminal */
+#egg {
+  position:fixed; inset:0; z-index:90; display:none;
+  background:rgba(6,4,12,.92); backdrop-filter:blur(3px);
+  place-items:center; padding:24px;
+}
+#egg.show { display:grid; animation:riseIn .3s both; }
+#egg .win {
+  width:min(520px,92vw); background:#0b0816; border:1px solid var(--boot);
+  border-radius:12px; overflow:hidden; box-shadow:0 0 60px color-mix(in srgb, var(--boot) 30%, transparent);
+}
+#egg .bar { display:flex; gap:7px; padding:11px 14px; background:#120d22; border-bottom:1px solid var(--line); }
+#egg .bar i { width:11px; height:11px; border-radius:50%; }
+#egg pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.8;
+  color:var(--boot); padding:20px; white-space:pre-wrap; }
+#egg .close { text-align:center; padding:0 0 16px; }
+#egg .close button { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted);
+  background:transparent; border:1px solid var(--line); border-radius:8px; padding:7px 16px; cursor:pointer; }
+
+#fx { position:fixed; inset:0; z-index:75; pointer-events:none; }
+
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation:none !important; transition:none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- audio de fondo (loop) + botón mute -->
+<audio id="bgm" loop preload="auto"></audio>
+<button id="mute" title="Silenciar / activar sonido">🔊</button>
+
+<!-- ===== FASE 0: PANTALLA DE ENTRADA (desbloquea el audio con el tap) ===== -->
+<div id="enter">
+  <div class="box">
+    <div class="kicker">// tienes una invitación</div>
+    <h2>¿Listo para<br>la fiesta?</h2>
+    <p>Súbele el volumen 🔊 y dale entrar.<br>Que empiece la locura ✨</p>
+    <button id="enterBtn">▶ Entrar</button>
+    <div class="sound">se disfruta mejor con audio</div>
+  </div>
+</div>
+
+<!-- ===== FASE 1: BOOT ===== -->
+<button id="skip">saltar intro ⏭</button>
+<div id="boot">
+  <div class="scan"></div>
+  <div id="bootlog"></div>
+  <div id="progressWrap">
+    <div id="progressBar"><i></i></div>
+    <div id="progressPct">0%</div>
+  </div>
+</div>
+
+<!-- ===== FASE 2: INVITACIÓN ===== -->
+<main id="invite">
+  <div class="photo">
+    <div class="ring"></div>
+    <span class="ph" id="photoPh">M</span>
+  </div>
+
+  <div class="eyebrow">// invitación v29.0 compilada ✔</div>
+  <h1>¡ES MI<br>CUMPLE!</h1>
+  <p class="sub">Capítulo 14: el comienzo de algo increíble ✨</p>
+
+  <p class="punch" id="punch"></p>
+
+  <div class="countdown" id="countdown">
+    <div class="cd-box"><div class="cd-num" id="cd-d">00</div><div class="cd-lbl">días</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-h">00</div><div class="cd-lbl">horas</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-m">00</div><div class="cd-lbl">min</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-s">00</div><div class="cd-lbl">seg</div></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><span class="k">Fecha</span><span class="v" id="v-fecha"></span></div>
+    <div class="row"><span class="k">Hora</span><span class="v" id="v-hora"></span></div>
+    <div class="row"><span class="k">Lugar</span><span class="v" id="v-lugar"></span></div>
+    <div class="row"><span class="k">Vestimenta</span><span class="v" id="v-dress"></span></div>
+  </div>
+
+  <a class="maps" id="maps" href="#" target="_blank" rel="noopener">📍 Cómo llegar</a>
+
+  <div class="rsvp card">
+    <div class="q">¿Vienes a la fiesta? 🥳</div>
+    <input id="nombre" type="text" placeholder="Escribe tu nombre aquí…" autocomplete="name">
+    <div class="btns">
+      <button class="btn btn-go" id="go">✅ ¡Sí, ahí estaré!</button>
+      <button class="btn btn-no" id="no">😢 No podré</button>
+    </div>
+  </div>
+
+  <footer>
+    hecho con código y cariño 🎉 · v29.0<br>
+    <span class="hint">psst… prueba escribir “sudo fiesta”</span>
+  </footer>
+</main>
+
+<!-- ===== Extras ===== -->
+<div id="toast"></div>
+<canvas id="fx"></canvas>
+
+<div id="egg">
+  <div class="win">
+    <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+    <pre id="eggText"></pre>
+    <div class="close"><button onclick="document.getElementById('egg').classList.remove('show')">cerrar [esc]</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — edita todo desde aquí
+   ============================================================ */
+const CONFIG = {
+  inicial: "M",                              // se muestra si no hay foto
+  fotoUrl: "./marian.jpeg",                               // pega aquí la URL/ruta de la foto (ej. "./foto.jpg")
+  fecha:   "Sábado 29 de Agosto",
+  hora:    "5:30 PM",
+  lugar:   "Pasaje Las Mercedes A1, Cerro Colorado",
+  dress:   "Urbano",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Pasaje+Las+Mercedes+A1+Cerro+Colorado+Arequipa",
+  partyDate: "2026-08-29T17:30:00",          // para el countdown (hora local, GMT-5)
+  musica:  "./audio.mpeg",                   // el mp3 libre de derechos (deja "" para sin música)
+
+  // A dónde llega el aviso de WhatsApp (número de Marian, con código país, sin + ni espacios)
+  whatsappNumero: "51992306783",
+  anfitriona: "Marian",                      // nombre para el mensaje de WhatsApp
+
+  // La frase destacada:
+  frase: "🎁 Traigan regalo, porque sin regalo… ¡NO HAY TORTA! 😂🎂",
+};
+
+/* ---- pinta la config en el DOM ---- */
+document.getElementById('punch').textContent   = CONFIG.frase;
+document.getElementById('v-fecha').textContent = CONFIG.fecha;
+document.getElementById('v-hora').textContent  = CONFIG.hora;
+document.getElementById('v-lugar').textContent = CONFIG.lugar;
+document.getElementById('v-dress').textContent = CONFIG.dress;
+document.getElementById('maps').href           = CONFIG.mapsUrl;
+document.getElementById('photoPh').textContent = CONFIG.inicial;
+if (CONFIG.fotoUrl) {
+  const ph = document.querySelector('.photo .ph');
+  const img = document.createElement('img'); img.src = CONFIG.fotoUrl; img.alt = "Foto";
+  ph.replaceWith(img);
+}
+
+/* ============================================================
+   FASE 1 · Secuencia de arranque (typewriter + barra)
+   ============================================================ */
+const BOOT_LINES = [
+  '<span class="muted">marian@arequipa</span>:~$ ./cumple.sh --run',
+  'iniciando locura<span class="muted"> ................</span> OK',
+  'cargando monster<span class="muted"> ...............</span> FRÍA',
+  'reservando after<span class="muted"> ...............</span> OK',
+  'compilando invitación v29.0<span class="muted"> ......</span> ✔',
+  'que empiece la locura <span class="muted">▶</span>',
+];
+const bootlog = document.getElementById('bootlog');
+const bar = document.querySelector('#progressBar i');
+const pct = document.getElementById('progressPct');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function typeLine(html, cb){
+  const el = document.createElement('div'); el.className = 'line';
+  bootlog.appendChild(el);
+  const cursor = document.createElement('span'); cursor.className = 'cursor';
+  el.appendChild(cursor);
+  let i = 0;
+  const tmp = document.createElement('div'); tmp.innerHTML = html;
+  const full = tmp.textContent;
+  const timer = setInterval(()=>{
+    i++;
+    el.innerHTML = renderPartial(html, full, i);
+    el.appendChild(cursor);
+    if (i >= full.length){ clearInterval(timer); el.innerHTML = html; cb && cb(); }
+  }, 28);   // ms por letra (más alto = tipea más lento)
+}
+function renderPartial(html, full, n){
+  let out='', count=0, inTag=false;
+  for (let c of html){
+    if (c==='<') inTag=true;
+    if (!inTag){ if (count<n){ out+=c; count++; } }
+    else out+=c;
+    if (c==='>') inTag=false;
+  }
+  return out;
+}
+
+let progress = 0;
+function runBoot(){
+  if (reduce){ finishBoot(); return; }
+  let idx = 0;
+  (function next(){
+    if (idx >= BOOT_LINES.length){ setTimeout(finishBoot, 400); return; }
+    typeLine(BOOT_LINES[idx], ()=>{
+      idx++;
+      progress = Math.round((idx/BOOT_LINES.length)*100);
+      bar.style.width = progress+'%'; pct.textContent = progress+'%';
+      setTimeout(next, 350);   // pausa entre líneas (más alto = más lento)
+    });
+  })();
+}
+
+function finishBoot(){
+  const boot = document.getElementById('boot');
+  boot.style.transition='opacity .5s'; boot.style.opacity='0';
+  document.getElementById('skip').style.display='none';
+  setTimeout(()=>{
+    boot.style.display='none';
+    const inv = document.getElementById('invite');
+    inv.classList.add('show');
+    startCountdown();
+    if (!reduce) ambientEmbers();
+    rampVolume(0.6, 1400);                 // la música sube cuando entra la fiesta ✨
+  }, 500);
+}
+
+/* ---- Entrada + audio: el tap del botón desbloquea el autoplay ---- */
+const bgm = document.getElementById('bgm');
+const muteBtn = document.getElementById('mute');
+const hasMusic = !!CONFIG.musica;
+if (hasMusic) bgm.src = CONFIG.musica;
+
+function rampVolume(to, ms){
+  if (!hasMusic) return;
+  const from = bgm.volume, steps = 20, dt = ms/steps; let i = 0;
+  const t = setInterval(()=>{
+    i++; bgm.volume = Math.min(1, Math.max(0, from + (to-from)*(i/steps)));
+    if (i >= steps) clearInterval(t);
+  }, dt);
+}
+
+document.getElementById('enterBtn').onclick = ()=>{
+  const enter = document.getElementById('enter');
+  enter.classList.add('hide');
+  setTimeout(()=> enter.style.display='none', 600);
+  if (hasMusic){
+    bgm.volume = 0.28;
+    bgm.play().catch(()=>{});
+    muteBtn.style.display = 'grid';
+  }
+  runBoot();
+};
+
+muteBtn.onclick = ()=>{
+  bgm.muted = !bgm.muted;
+  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
+};
+
+document.getElementById('skip').onclick = finishBoot;
+
+/* ============================================================
+   Countdown a la fiesta
+   ============================================================ */
+function startCountdown(){
+  const target = new Date(CONFIG.partyDate).getTime();
+  const pad = n => String(n).padStart(2,'0');
+  function tick(){
+    const diff = target - Date.now();
+    if (diff <= 0){
+      document.getElementById('countdown').innerHTML =
+        '<div style="font-family:Unbounded;font-weight:700;color:var(--gold);font-size:22px">¡Hoy es el día! 🎉</div>';
+      return;
+    }
+    const d=Math.floor(diff/864e5), h=Math.floor(diff%864e5/36e5),
+          m=Math.floor(diff%36e5/6e4), s=Math.floor(diff%6e4/1e3);
+    document.getElementById('cd-d').textContent=pad(d);
+    document.getElementById('cd-h').textContent=pad(h);
+    document.getElementById('cd-m').textContent=pad(m);
+    document.getElementById('cd-s').textContent=pad(s);
+    setTimeout(tick,1000);
+  }
+  tick();
+}
+
+/* ============================================================
+   RSVP — solo aviso por WhatsApp (sin base de datos)
+   ============================================================ */
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); clearTimeout(t._h);
+  t._h=setTimeout(()=>t.classList.remove('show'), 3600);
+}
+
+/* Al confirmar, la tarjeta pasa a estado de éxito y ofrece avisar por WhatsApp
+   con un tap (link = gesto real, sin bloqueos de popup). */
+function mostrarExito(nombre, viene){
+  const card = document.querySelector('.rsvp');
+  const wa = CONFIG.whatsappNumero
+    ? 'https://wa.me/'+CONFIG.whatsappNumero+'?text='+encodeURIComponent(
+        viene ? '¡Hola '+CONFIG.anfitriona+'! Confirmo que voy a tu cumple 🎉 — '+nombre
+              : 'Hola '+CONFIG.anfitriona+', no podré ir a tu cumple 😢 — '+nombre)
+    : '';
+  card.innerHTML =
+    '<div class="q">'+(viene ? '¡Nos vemos, '+nombre+'! 🎉' : 'Te vamos a extrañar 😢')+'</div>'+
+    '<p style="color:var(--muted);font-size:14px;margin:-6px 0 16px">'+
+      (viene ? 'Toca el botón para avisarle a '+CONFIG.anfitriona+'.'
+             : 'Avísale para que lo sepa 💜')+'</p>'+
+    (wa ? '<a class="btn btn-go" style="display:block;text-decoration:none;text-align:center" '+
+          'href="'+wa+'" target="_blank" rel="noopener">📲 Avisar por WhatsApp</a>' : '');
+}
+
+function confirmar(viene){
+  const n = document.getElementById('nombre').value.trim();
+  if (!n){ toast('Oye, primero tu nombre 😄'); document.getElementById('nombre').focus(); return; }
+  if (viene) confetti();
+  mostrarExito(n, viene);
+}
+
+document.getElementById('go').onclick = () => confirmar(true);
+document.getElementById('no').onclick = () => confirmar(false);
+
+/* ============================================================
+   Confetti (canvas, sin librerías)
+   ============================================================ */
+const cv=document.getElementById('fx'), cx=cv.getContext('2d');
+function size(){ cv.width=innerWidth; cv.height=innerHeight; }
+size(); addEventListener('resize', size);
+function confetti(){
+  if (reduce) return;
+  const cols=['#ff2d95','#b026ff','#22d3ee','#f0edff','#7c3aed','#ec4899'];
+  const P=[];
+  for (let i=0;i<140;i++){
+    P.push({ x:innerWidth/2, y:innerHeight*.42,
+      vx:(Math.random()-.5)*11, vy:Math.random()*-13-4,
+      s:Math.random()*7+4, c:cols[i%cols.length], r:Math.random()*6, vr:(Math.random()-.5)*.4 });
+  }
+  let f=0;
+  (function loop(){
+    cx.clearRect(0,0,cv.width,cv.height); f++;
+    P.forEach(p=>{
+      p.vy+=.32; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr;
+      cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r);
+      cx.fillStyle=p.c; cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); cx.restore();
+    });
+    if (f<140) requestAnimationFrame(loop); else cx.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+
+/* Brillos ambientales (pocos, sutiles) */
+function ambientEmbers(){
+  const cols=['#ff2d95','#22d3ee'];
+  const E=Array.from({length:18},()=>({
+    x:Math.random()*innerWidth, y:innerHeight+Math.random()*innerHeight,
+    v:Math.random()*.6+.2, s:Math.random()*2.5+1, c:cols[Math.random()*2|0], a:Math.random()*.5+.2
+  }));
+  (function loop(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    E.forEach(e=>{
+      e.y-=e.v; if (e.y< -10){ e.y=innerHeight+10; e.x=Math.random()*innerWidth; }
+      cx.globalAlpha=e.a; cx.fillStyle=e.c;
+      cx.beginPath(); cx.arc(e.x,e.y,e.s,0,7); cx.fill();
+    });
+    cx.globalAlpha=1;
+    requestAnimationFrame(loop);
+  })();
+}
+
+/* ============================================================
+   Easter egg: escribe "sudo fiesta"
+   ============================================================ */
+const EGG_TEXT =
+`$ sudo fiesta
+[sudo] contraseña para invitad@: ••••••
+Permiso concedido ✔
+
+> desplegando modo locura...
+> monster.status ........ FRÍA ✔
+> ganas_de_ir ........... 100% ✔
+> excusas .............. not found
+
+Nos vemos el sábado 🎉`;
+let buf='';
+addEventListener('keydown', e=>{
+  if (!e.key) return;                    // ignora eventos sin tecla (autofill, IME, etc.)
+  if (e.key==='Escape'){ document.getElementById('egg').classList.remove('show'); return; }
+  if (e.key.length===1) buf=(buf+e.key.toLowerCase()).slice(-11);
+  if (buf.includes('sudo fiesta')){
+    buf='';
+    document.getElementById('eggText').textContent=EGG_TEXT;
+    document.getElementById('egg').classList.add('show');
+    confetti();
+  }
+});
+</script>
+</body>
+</html>
