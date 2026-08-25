@@ -207,6 +207,10 @@ h1 {
 }
 .row .v { font-size:15px; color:var(--ink); font-weight:500; }
 
+
+/* Confirmados */
+.tally { margin:22px 0 4px; font-size:14px; color:var(--muted); }
+.tally b { color:var(--gold); font-family:'JetBrains Mono',monospace; }
 /* RSVP */
 .rsvp { margin-top:22px; }
 .rsvp .q { font-family:'Unbounded'; font-weight:600; font-size:18px; margin-bottom:14px; }
@@ -330,6 +334,8 @@ footer { margin-top:34px; font-family:'JetBrains Mono',monospace;
   </div>
 
   <a class="maps" id="maps" href="#" target="_blank" rel="noopener">📍 Cómo llegar</a>
+  
+  <div class="tally">Ya van <b id="tallyNum">0</b> confirmados 🎉</div>
 
   <div class="rsvp card">
     <div class="q">¿Vienes a la fiesta? 🥳</div>
@@ -357,7 +363,7 @@ footer { margin-top:34px; font-family:'JetBrains Mono',monospace;
     <div class="close"><button onclick="document.getElementById('egg').classList.remove('show')">cerrar [esc]</button></div>
   </div>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ============================================================
    CONFIG — edita todo desde aquí
@@ -371,10 +377,12 @@ const CONFIG = {
   dress:   "Urbano",
   mapsUrl: "https://maps.app.goo.gl/gVoEGA1eDH4jfKdN7",
   partyDate: "2026-08-29T17:30:00",          // para el countdown (hora local, GMT-5)
-  musica:  "./audio.mpeg",                   // el mp3 libre de derechos (deja "" para sin música)
+  musica:  "./audio.mpeg",    
+  supabaseUrl: "https://zpnwtigsmiqggmwcfzgc.supabase.co",
+  supabaseKey: "sb_publishable_AQqexKVGt3thpU3EKgFMfQ_-7jarWUg",               // el mp3 libre de derechos (deja "" para sin música)
 
   // A dónde llega el aviso de WhatsApp (número de Marian, con código país, sin + ni espacios)
-  whatsappNumero: "51992306783",
+  whatsappNumero: "51987074930",
   anfitriona: "Marian",                      // nombre para el mensaje de WhatsApp
 
   // La frase destacada:
@@ -527,14 +535,38 @@ function startCountdown(){
 /* ============================================================
    RSVP — solo aviso por WhatsApp (sin base de datos)
    ============================================================ */
+/* ============================================================
+   RSVP — aviso por WhatsApp + contador en vivo (Supabase)
+   ============================================================ */
 function toast(msg){
   const t=document.getElementById('toast'); t.textContent=msg;
   t.classList.add('show'); clearTimeout(t._h);
   t._h=setTimeout(()=>t.classList.remove('show'), 3600);
 }
 
-/* Al confirmar, la tarjeta pasa a estado de éxito y ofrece avisar por WhatsApp
-   con un tap (link = gesto real, sin bloqueos de popup). */
+/* ¿Supabase configurado? Si no, la página funciona igual (sin contador). */
+const SUPA_OK = /^https:\/\//.test(CONFIG.supabaseUrl)
+             && /^sb_publishable_/.test(CONFIG.supabaseKey)
+             && !!window.supabase;
+const db = SUPA_OK ? window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey) : null;
+
+let tally = 0;
+const tallyEl = document.getElementById('tallyNum');
+
+async function refreshCount(){
+  if (!SUPA_OK) return;
+  const { data, error } = await db.rpc('contar_confirmados_marian');
+  if (!error && typeof data === 'number'){ tally = data; tallyEl.textContent = tally; }
+}
+
+/* Canal propio de Marian (nombre distinto al tuyo para no cruzarse) */
+let canal = null;
+if (SUPA_OK){
+  canal = db.channel('confirmaciones-marian-live');
+  canal.on('broadcast', { event:'nueva' }, refreshCount).subscribe();
+  refreshCount();
+}
+
 function mostrarExito(nombre, viene){
   const card = document.querySelector('.rsvp');
   const wa = CONFIG.whatsappNumero
@@ -551,15 +583,31 @@ function mostrarExito(nombre, viene){
           'href="'+wa+'" target="_blank" rel="noopener">📲 Avisar por WhatsApp</a>' : '');
 }
 
-function confirmar(viene){
+const goBtn = document.getElementById('go');
+const noBtn = document.getElementById('no');
+
+async function confirmar(viene){
   const n = document.getElementById('nombre').value.trim();
   if (!n){ toast('Oye, primero tu nombre 😄'); document.getElementById('nombre').focus(); return; }
+  goBtn.disabled = noBtn.disabled = true;
+
+  if (SUPA_OK){
+    const { error } = await db.from('confirmaciones_marian').insert({ nombre:n, asiste:viene });
+    if (error){
+      toast('Uy, no se pudo guardar. Reintenta en un toque 🙏');
+      goBtn.disabled = noBtn.disabled = false;
+      return;
+    }
+    if (canal) canal.send({ type:'broadcast', event:'nueva', payload:{} });
+    await refreshCount();
+  }
+
   if (viene) confetti();
   mostrarExito(n, viene);
 }
 
-document.getElementById('go').onclick = () => confirmar(true);
-document.getElementById('no').onclick = () => confirmar(false);
+goBtn.onclick = () => confirmar(true);
+noBtn.onclick = () => confirmar(false);
 
 /* ============================================================
    Confetti (canvas, sin librerías)
